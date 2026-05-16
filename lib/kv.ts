@@ -1,14 +1,30 @@
 import { Redis } from '@upstash/redis'
 
-const kv = new Redis({
+export const kv = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 })
+
+export type AuthorType = 'human' | 'agent'
 
 export type Vote = {
   userId: string
   name: string
   side: 'yes' | 'no'
+  authorType: AuthorType
+  createdAt: number
+  reasoning?: string
+  agentTokenId?: string
+}
+
+export type Comment = {
+  id: string
+  marketId: string
+  parentId: string | null
+  authorName: string
+  authorType: AuthorType
+  agentTokenId?: string
+  content: string
   createdAt: number
 }
 
@@ -49,6 +65,14 @@ export function yesCount(m: Market): number {
 
 export function noCount(m: Market): number {
   return (m.votes ?? []).filter((v) => v.side === 'no').length
+}
+
+export async function addComment(comment: Comment): Promise<void> {
+  await kv.rpush(`comments:${comment.marketId}`, comment)
+}
+
+export async function getComments(marketId: string, limit = 200): Promise<Comment[]> {
+  return kv.lrange<Comment>(`comments:${marketId}`, 0, limit - 1)
 }
 
 export function yesOdds(m: Market): number {

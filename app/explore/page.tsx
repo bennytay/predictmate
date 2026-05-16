@@ -1,274 +1,226 @@
 import Link from 'next/link'
-import { getMarketIndex, getMarket, saveMarket, addMarketToIndex, yesOdds, type Market, type Vote } from '@/lib/kv'
+import { getMarketIndex, getMarket, yesOdds, yesCount, noCount, type Market } from '@/lib/kv'
 
 export const revalidate = 0
 
-// ── Fake seed data ──────────────────────────────────────────────────────────
-
-const NAMES = ['Jordan', 'Alex', 'Sam', 'Morgan', 'Taylor', 'Casey', 'Riley', 'Quinn', 'Drew', 'Blake']
-
-function makeVotes(yes: number, no: number): Vote[] {
-  const votes: Vote[] = []
-  for (let i = 0; i < yes; i++) {
-    votes.push({ userId: `fy${i}`, name: NAMES[i % NAMES.length], side: 'yes', createdAt: Date.now() - (yes + no - i) * 180000 })
-  }
-  for (let i = 0; i < no; i++) {
-    votes.push({ userId: `fn${i}`, name: NAMES[(i + 4) % NAMES.length], side: 'no', createdAt: Date.now() - (no - i) * 180000 })
-  }
-  return votes
-}
-
-const SEED_MARKETS: Omit<Market, 'id'>[] = [
-  {
-    question: 'Will the squad actually make it to Vegas this summer?',
-    creatorName: 'Tyler',
-    context: "We've been planning this trip for 2 years. Hotels booked, flights probably not.",
-    expiresAt: Date.now() + 86400000 * 60,
-    votes: makeVotes(14, 28),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9','u10','u11','u12'],
-    downvoters: ['u13'],
-    createdAt: Date.now() - 86400000 * 3,
-  },
-  {
-    question: 'Will Alex get the promotion before Q3 ends?',
-    creatorName: 'Sam',
-    context: "Alex has been at the company for 3 years and just led a major project that shipped on time.",
-    expiresAt: Date.now() + 86400000 * 45,
-    votes: makeVotes(31, 12),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8'],
-    downvoters: [],
-    createdAt: Date.now() - 86400000 * 5,
-  },
-  {
-    question: 'Will Morgan keep their no-alcohol streak past 30 days?',
-    creatorName: 'Jamie',
-    context: "Morgan started dry January but it's now March. Impressive or over by Friday?",
-    expiresAt: Date.now() + 86400000 * 14,
-    votes: makeVotes(18, 41),
-    upvoters: ['u1','u2','u3','u4','u5'],
-    downvoters: ['u6'],
-    createdAt: Date.now() - 86400000 * 2,
-  },
-  {
-    question: 'Does Taylor end up dating their coworker?',
-    creatorName: 'Jordan',
-    context: "The tension is REAL. They've had lunch together 4 days in a row this week.",
-    expiresAt: Date.now() + 86400000 * 90,
-    votes: makeVotes(52, 19),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9','u10','u11','u12','u13','u14','u15','u16','u17','u18','u19','u20'],
-    downvoters: ['u21','u22'],
-    createdAt: Date.now() - 86400000 * 7,
-  },
-  {
-    question: 'Will Casey actually finish the half-marathon this Sunday?',
-    creatorName: 'Riley',
-    context: "First half-marathon. Training started 10 weeks ago. Longest run so far: 11 miles.",
-    expiresAt: Date.now() + 86400000 * 4,
-    votes: makeVotes(38, 9),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9','u10','u11','u12','u13','u14'],
-    downvoters: [],
-    createdAt: Date.now() - 86400000 * 1,
-  },
-  {
-    question: 'Will Sam quit their job and go full freelance by year end?',
-    creatorName: 'Quinn',
-    context: "Sam has been freelancing on the side for 6 months and revenue is growing.",
-    expiresAt: Date.now() + 86400000 * 200,
-    votes: makeVotes(27, 33),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7'],
-    downvoters: ['u8','u9'],
-    createdAt: Date.now() - 86400000 * 10,
-  },
-  {
-    question: 'Will the friend group actually use the group chat they just made?',
-    creatorName: 'Drew',
-    context: "New group chat formed after a night out. Currently at 412 unread messages and it's been 3 hours.",
-    expiresAt: Date.now() + 86400000 * 30,
-    votes: makeVotes(11, 67),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9','u10','u11','u12','u13','u14','u15','u16','u17','u18','u19','u20','u21','u22','u23','u24','u25'],
-    downvoters: ['u26','u27','u28'],
-    createdAt: Date.now() - 86400000 * 1,
-  },
-  {
-    question: 'Will Blake get into the grad program they applied to?',
-    creatorName: 'Morgan',
-    context: "Blake applied to 5 programs. GPA is 3.8. Two letters of rec were from professors who barely know them.",
-    expiresAt: Date.now() + 86400000 * 120,
-    votes: makeVotes(44, 16),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9','u10','u11'],
-    downvoters: ['u12'],
-    createdAt: Date.now() - 86400000 * 4,
-  },
-  {
-    question: 'Will Jordan propose on the Paris trip next month?',
-    creatorName: 'Alex',
-    context: "Jordan has been dating their partner for 4 years. Booked a fancy restaurant in Paris. Hmm.",
-    expiresAt: Date.now() + 86400000 * 35,
-    votes: makeVotes(61, 12),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9','u10','u11','u12','u13','u14','u15','u16','u17','u18','u19','u20','u21','u22','u23'],
-    downvoters: ['u24','u25'],
-    createdAt: Date.now() - 86400000 * 2,
-  },
-  {
-    question: 'Will the office fantasy football champion be dethroned this season?',
-    creatorName: 'Casey',
-    context: "Chris has won 3 years in a row. But their top two picks both got injured in preseason.",
-    expiresAt: Date.now() + 86400000 * 150,
-    votes: makeVotes(29, 37),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9'],
-    downvoters: ['u10','u11'],
-    createdAt: Date.now() - 86400000 * 6,
-  },
-  {
-    question: 'Will Riley finish painting their apartment before guests arrive this weekend?',
-    creatorName: 'Taylor',
-    context: "Started painting Wednesday. Three rooms. Still needs a second coat. Guests arrive Saturday noon.",
-    expiresAt: Date.now() + 86400000 * 2,
-    votes: makeVotes(8, 52),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9','u10','u11','u12','u13','u14','u15','u16','u17','u18','u19','u20'],
-    downvoters: ['u21'],
-    createdAt: Date.now() - 86400000 * 1,
-  },
-  {
-    question: 'Will Drew land their first client for the new consulting business this month?',
-    creatorName: 'Blake',
-    context: "Quit corporate 6 weeks ago. Has 3 discovery calls lined up. Savings runway: 5 months.",
-    expiresAt: Date.now() + 86400000 * 18,
-    votes: makeVotes(33, 21),
-    upvoters: ['u1','u2','u3','u4','u5','u6','u7','u8','u9','u10','u11','u12'],
-    downvoters: ['u13','u14','u15'],
-    createdAt: Date.now() - 86400000 * 3,
-  },
+// ── Category chip helper ──────────────────────────────────────────────────────
+const CATEGORY_PATTERNS: [RegExp, string][] = [
+  [/ukraine|russia|ceasefire|nato|war|military|conflict/i, 'Geopolitics'],
+  [/bitcoin|crypto|eth|nft|blockchain/i, 'Crypto'],
+  [/fed|rate|gdp|inflation|economy|market|stock|sp500|nasdaq/i, 'Economy'],
+  [/climate|temperature|carbon|emissions|energy|ev|electric/i, 'Climate'],
+  [/ai|gpt|claude|llm|openai|anthropic|model|neural/i, 'AI & Tech'],
+  [/election|senate|house|congress|president|vote|democrat|republican/i, 'Politics'],
+  [/apple|google|meta|amazon|microsoft|nvidia|tesla/i, 'Tech Companies'],
+  [/spacex|moon|nasa|rocket|mars|orbit/i, 'Space'],
+  [/fifa|nba|nfl|world cup|championship|super bowl|oscar|grammy/i, 'Culture'],
+  [/gym|diet|budget|roommate|ex|friend|date|proposal|relationship/i, 'Personal'],
+  [/netflix|tiktok|instagram|streaming|platform/i, 'Media'],
 ]
 
-async function seedIfEmpty() {
-  const existing = await getMarketIndex(1)
-  if (existing.length > 0) return
-
-  for (let i = 0; i < SEED_MARKETS.length; i++) {
-    const id = `demo${(i + 1).toString().padStart(2, '0')}`
-    const market: Market = { id, ...SEED_MARKETS[i] }
-    await saveMarket(market)
-    await addMarketToIndex(id)
+function getCategory(question: string): string {
+  for (const [re, label] of CATEGORY_PATTERNS) {
+    if (re.test(question)) return label
   }
+  return 'General'
 }
 
-// ── Card component ───────────────────────────────────────────────────────────
+const CATEGORY_COLORS: Record<string, string> = {
+  Geopolitics:    'bg-rose-50 text-rose-700 border-rose-200',
+  Crypto:         'bg-amber-50 text-amber-700 border-amber-200',
+  Economy:        'bg-blue-50 text-blue-700 border-blue-200',
+  Climate:        'bg-green-50 text-green-700 border-green-200',
+  'AI & Tech':    'bg-violet-50 text-violet-700 border-violet-200',
+  Politics:       'bg-red-50 text-red-700 border-red-200',
+  'Tech Companies': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  Space:          'bg-slate-50 text-slate-700 border-slate-200',
+  Culture:        'bg-pink-50 text-pink-700 border-pink-200',
+  Personal:       'bg-orange-50 text-orange-700 border-orange-200',
+  Media:          'bg-teal-50 text-teal-700 border-teal-200',
+  General:        'bg-gray-50 text-gray-600 border-gray-200',
+}
 
+// ── Market card ───────────────────────────────────────────────────────────────
 function MarketCard({ market }: { market: Market }) {
-  const yesPct     = yesOdds(market)
-  const noPct      = 100 - yesPct
-  const totalVotes = (market.votes ?? []).length
+  const yes        = yesCount(market)
+  const no         = noCount(market)
+  const total      = yes + no
+  const yesPct     = total > 0 ? Math.round((yes / total) * 100) : 50
   const upvotes    = (market.upvoters ?? []).length
-  const isExpired  = Date.now() > market.expiresAt
   const isSettled  = !!market.outcome
+  const isExpired  = !isSettled && Date.now() > market.expiresAt
+  const category   = getCategory(market.question)
+  const catColor   = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.General
 
-  const initial = market.question.replace(/[^a-zA-Z]/g, '')[0]?.toUpperCase() ?? '?'
-  const colors  = ['bg-violet-100 text-violet-600', 'bg-indigo-100 text-indigo-600', 'bg-blue-100 text-blue-600', 'bg-emerald-100 text-emerald-600', 'bg-amber-100 text-amber-600', 'bg-pink-100 text-pink-600']
-  const colorCls = colors[market.id.charCodeAt(market.id.length - 1) % colors.length]
+  const closingLabel = isSettled
+    ? `Resolved ${new Date(market.resolvedAt!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    : isExpired
+      ? 'Closed'
+      : `Closes ${new Date(market.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+
+  // Probability color: green when Yes is likely, red when No is likely
+  const probColor = isSettled
+    ? market.outcome === 'yes' ? 'text-green-600' : 'text-red-600'
+    : yesPct >= 60 ? 'text-green-600' : yesPct <= 40 ? 'text-red-500' : 'text-gray-800'
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-3 h-full hover:shadow-md hover:border-gray-300 transition">
+    <div className="bg-white rounded-xl border border-gray-200 flex flex-col gap-0 h-full hover:shadow-md hover:border-gray-300 transition group overflow-hidden">
 
-      {/* Icon + question */}
-      <div className="flex gap-3 items-start">
-        {market.imageUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={market.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-        ) : (
-          <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-sm ${colorCls}`}>
-            {initial}
-          </div>
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2">
+        <span className={`flex-shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${catColor}`}>
+          {category}
+        </span>
+        {upvotes > 0 && (
+          <span className="flex items-center gap-0.5 text-[11px] text-gray-400 flex-shrink-0">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933A4 4 0 006 10.333z" /></svg>
+            {upvotes}
+          </span>
         )}
-        <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">
+      </div>
+
+      {/* Question */}
+      <div className="px-4 pb-4">
+        <p className="text-[13px] font-semibold text-gray-900 leading-snug line-clamp-2">
           {market.question}
         </p>
       </div>
 
-      {/* Probability */}
-      <div className="flex items-baseline gap-1.5">
+      {/* Probability indicator — Polymarket style */}
+      <div className="px-4 pb-3 flex items-end gap-2">
         {isSettled ? (
-          <span className={`text-2xl font-extrabold ${market.outcome === 'yes' ? 'text-green-600' : 'text-red-600'}`}>
-            {market.outcome === 'yes' ? 'YES' : 'NO'}
-          </span>
+          <div className={`text-3xl font-black ${probColor}`}>
+            {market.outcome!.toUpperCase()}
+          </div>
         ) : (
           <>
-            <span className="text-2xl font-extrabold text-gray-900">{yesPct}%</span>
-            <span className="text-xs text-gray-400">chance</span>
+            <div className={`text-3xl font-black leading-none ${probColor}`}>{yesPct}%</div>
+            <div className="text-xs text-gray-400 mb-0.5 leading-tight">
+              <span className="block font-semibold text-gray-500">CHANCE</span>
+              <span>YES</span>
+            </div>
           </>
         )}
+        <div className="ml-auto text-right text-[11px] text-gray-400">
+          <span className="block font-medium text-gray-600">{(100 - yesPct)}%</span>
+          <span>NO</span>
+        </div>
       </div>
 
       {/* Progress bar */}
       {!isSettled && (
-        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-green-400 to-green-500" style={{ width: `${yesPct}%` }} />
+        <div className="mx-4 mb-4 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+          <div
+            className={`h-full transition-all duration-500 rounded-full ${
+              yesPct >= 60 ? 'bg-green-500' : yesPct <= 40 ? 'bg-red-400' : 'bg-indigo-400'
+            }`}
+            style={{ width: `${yesPct}%` }}
+          />
         </div>
       )}
 
-      {/* YES / NO pills */}
-      <div className="flex gap-2">
-        <div className="flex-1 rounded-lg bg-green-50 border border-green-200 py-1.5 text-center text-xs font-bold text-green-700">
-          Yes {yesPct}%
-        </div>
-        <div className="flex-1 rounded-lg bg-red-50 border border-red-200 py-1.5 text-center text-xs font-bold text-red-600">
-          No {noPct}%
-        </div>
-      </div>
-
       {/* Footer */}
-      <div className="flex items-center justify-between pt-1 border-t border-gray-100 text-[11px] text-gray-400">
-        <span>{totalVotes} vote{totalVotes !== 1 ? 's' : ''}</span>
-        <div className="flex items-center gap-2">
-          {upvotes > 0 && <span className="text-indigo-500">↑ {upvotes}</span>}
-          {isExpired && !isSettled && <span className="text-gray-400">Closed</span>}
-          <span>by {market.creatorName}</span>
-        </div>
+      <div className="mt-auto px-4 py-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400 bg-gray-50/50">
+        <span>{total.toLocaleString()} vote{total !== 1 ? 's' : ''}</span>
+        <span className="truncate ml-2">{closingLabel}</span>
       </div>
     </div>
   )
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
+// ── Sort + filter helpers ─────────────────────────────────────────────────────
+function sortMarkets(markets: Market[], sort: string): Market[] {
+  const now = Date.now()
+  if (sort === 'new')     return [...markets].sort((a, b) => b.createdAt - a.createdAt)
+  if (sort === 'closing') return [...markets].filter(m => !m.outcome && m.expiresAt > now).sort((a, b) => a.expiresAt - b.expiresAt)
+  // 'hot' default: weighted by upvotes + volume
+  return [...markets].sort((a, b) =>
+    ((b.upvoters ?? []).length * 3 + (b.votes ?? []).length) -
+    ((a.upvoters ?? []).length * 3 + (a.votes ?? []).length)
+  )
+}
 
-export default async function ExplorePage() {
-  await seedIfEmpty()
+// ── Page ──────────────────────────────────────────────────────────────────────
+type Props = { searchParams: Promise<Record<string, string>> }
 
-  const ids     = await getMarketIndex(60)
-  const markets = (await Promise.all(ids.map(getMarket))).filter((m): m is Market => m !== null)
+export default async function ExplorePage({ searchParams }: Props) {
+  const sp    = await searchParams
+  const sort  = ['hot', 'new', 'closing'].includes(sp.sort ?? '') ? sp.sort : 'hot'
+  const cat   = sp.cat ?? 'all'
+
+  const ids     = await getMarketIndex(100)
+  const all     = (await Promise.all(ids.map(getMarket))).filter((m): m is Market => m !== null)
+
+  const filtered = cat === 'all'
+    ? all
+    : all.filter((m) => getCategory(m.question).toLowerCase() === cat.toLowerCase())
+
+  const markets = sortMarkets(filtered, sort)
+
+  const categories = ['All', ...Array.from(new Set(all.map((m) => getCategory(m.question)))).sort()]
+
+  const sortLabel: Record<string, string> = { hot: '🔥 Hot', new: '✨ New', closing: '⏱ Closing Soon' }
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">All markets</h1>
-          <p className="text-sm text-gray-400">{markets.length} predictions</p>
+          <h1 className="text-xl font-bold text-gray-900">Prediction Markets</h1>
+          <p className="text-sm text-gray-400">{markets.length} active · crowd consensus in real time</p>
         </div>
-        <div className="flex items-center gap-2 text-gray-400">
-          <button className="p-2 rounded-lg hover:bg-gray-100 transition" title="Search">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          </button>
-          <button className="p-2 rounded-lg hover:bg-gray-100 transition" title="Filter">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" /></svg>
-          </button>
+
+        {/* Sort tabs */}
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+          {['hot', 'new', 'closing'].map((s) => (
+            <Link
+              key={s}
+              href={`/explore?sort=${s}${cat !== 'all' ? `&cat=${cat}` : ''}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                sort === s ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {sortLabel[s]}
+            </Link>
+          ))}
         </div>
       </div>
 
-      {/* Market grid */}
+      {/* Category filter pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-5" style={{ scrollbarWidth: 'none' }}>
+        {categories.map((c) => {
+          const slug = c.toLowerCase()
+          const isActive = cat === slug || (cat === 'all' && c === 'All')
+          return (
+            <Link
+              key={c}
+              href={`/explore?sort=${sort}&cat=${slug}`}
+              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                isActive
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-700'
+              }`}
+            >
+              {c}
+            </Link>
+          )
+        })}
+      </div>
+
+      {/* Grid */}
       {markets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 text-center">
-          <p className="text-gray-500 mb-4">No predictions yet</p>
+          <p className="text-gray-500 mb-4">No markets in this category yet.</p>
           <Link href="/create" className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition">
             Create the first one →
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {markets.map((market) => (
-            <Link key={market.id} href={`/m/${market.id}`} className="flex">
-              <MarketCard market={market} />
+          {markets.map((m) => (
+            <Link key={m.id} href={`/m/${m.id}`} className="flex">
+              <MarketCard market={m} />
             </Link>
           ))}
         </div>

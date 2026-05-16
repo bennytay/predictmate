@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'You have already voted' }, { status: 400 })
   }
 
-  votes.push({ userId, name: name.trim().slice(0, 50), side, createdAt: Date.now() })
+  votes.push({ userId, name: name.trim().slice(0, 50), side, authorType: 'human', createdAt: Date.now() })
   market.votes = votes
 
   await saveMarket(market)

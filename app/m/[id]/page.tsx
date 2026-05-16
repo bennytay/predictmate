@@ -4,6 +4,7 @@ import { getMarket, yesOdds, yesCount, noCount } from '@/lib/kv'
 import VoteForm from './vote-form'
 import UpvoteBar from './upvote-bar'
 import ResolveForm from './resolve-form'
+import CommentSection from './comment-section'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -115,6 +116,8 @@ export default async function MarketPage({ params }: Props) {
               <p className="text-sm text-gray-400">Be the first to vote on this prediction.</p>
             </div>
           )}
+
+          <CommentSection marketId={market.id} />
         </div>
 
         {/* ── Right sidebar ── */}
