@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
 
   const market = await getMarket(marketId)
   if (!market) return Response.json({ error: 'Market not found' }, { status: 404 })
-  if (market.outcome) return Response.json({ error: 'Market already settled' }, { status: 400 })
+  if (market.outcome) return Response.json({ error: 'Market already resolved' }, { status: 400 })
   if (market.creatorName.toLowerCase() !== creatorName.trim().toLowerCase()) {
-    return Response.json({ error: 'Only the creator can settle this market' }, { status: 403 })
+    return Response.json({ error: 'Only the creator can resolve this market' }, { status: 403 })
   }
 
   market.outcome = outcome

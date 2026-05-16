@@ -5,11 +5,10 @@ const kv = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 })
 
-export type Bet = {
-  id: string
+export type Vote = {
+  userId: string
   name: string
   side: 'yes' | 'no'
-  amount: number
   createdAt: number
 }
 
@@ -17,12 +16,15 @@ export type Market = {
   id: string
   question: string
   creatorName: string
+  context?: string
+  imageUrl?: string
   expiresAt: number
-  yesPool: number
-  noPool: number
-  bets: Bet[]
+  votes: Vote[]
+  upvoters: string[]
+  downvoters: string[]
   outcome?: 'yes' | 'no'
   resolvedAt?: number
+  createdAt: number
 }
 
 export async function getMarket(id: string): Promise<Market | null> {
@@ -33,40 +35,23 @@ export async function saveMarket(market: Market): Promise<void> {
   await kv.set(`market:${market.id}`, market)
 }
 
-export function yesOdds(market: Market): number {
-  const total = market.yesPool + market.noPool
-  return total > 0 ? Math.round((market.yesPool / total) * 100) : 50
+export async function addMarketToIndex(id: string): Promise<void> {
+  await kv.lpush('markets:index', id)
 }
 
-export type Expense = {
-  id: string
-  payer: string
-  description: string
-  amount: number
-  createdAt: number
+export async function getMarketIndex(limit = 50): Promise<string[]> {
+  return kv.lrange<string>('markets:index', 0, limit - 1)
 }
 
-export type Payback = {
-  id: string
-  from: string
-  to: string
-  amount: number
-  note: string
-  createdAt: number
+export function yesCount(m: Market): number {
+  return (m.votes ?? []).filter((v) => v.side === 'yes').length
 }
 
-export type SplitGroup = {
-  id: string
-  title: string
-  expenses: Expense[]
-  paybacks: Payback[]
-  createdAt: number
+export function noCount(m: Market): number {
+  return (m.votes ?? []).filter((v) => v.side === 'no').length
 }
 
-export async function getSplitGroup(id: string): Promise<SplitGroup | null> {
-  return kv.get<SplitGroup>(`split:${id}`)
-}
-
-export async function saveSplitGroup(group: SplitGroup): Promise<void> {
-  await kv.set(`split:${group.id}`, group)
+export function yesOdds(m: Market): number {
+  const total = (m.votes ?? []).length
+  return total > 0 ? Math.round((yesCount(m) / total) * 100) : 50
 }

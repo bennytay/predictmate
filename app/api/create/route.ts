@@ -1,10 +1,9 @@
 import { type NextRequest } from 'next/server'
 import { nanoid } from 'nanoid'
-import { saveMarket } from '@/lib/kv'
+import { saveMarket, addMarketToIndex } from '@/lib/kv'
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { question, creatorName, expiresAt } = body
+  const { question, creatorName, expiresAt, context, imageUrl } = await req.json()
 
   if (!question?.trim() || !creatorName?.trim() || !expiresAt) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
@@ -15,16 +14,21 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Expiry must be in the future' }, { status: 400 })
   }
 
-  const id = nanoid(8)
-  await saveMarket({
-    id,
-    question: question.trim(),
-    creatorName: creatorName.trim(),
+  const market = {
+    id: nanoid(8),
+    question: question.trim().slice(0, 280),
+    creatorName: creatorName.trim().slice(0, 50),
+    context: context?.trim().slice(0, 1000) || undefined,
+    imageUrl: imageUrl?.trim() || undefined,
     expiresAt: expiry,
-    yesPool: 0,
-    noPool: 0,
-    bets: [],
-  })
+    votes: [],
+    upvoters: [],
+    downvoters: [],
+    createdAt: Date.now(),
+  }
 
-  return Response.json({ id })
+  await saveMarket(market)
+  await addMarketToIndex(market.id)
+
+  return Response.json({ id: market.id })
 }
