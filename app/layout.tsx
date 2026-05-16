@@ -9,28 +9,67 @@ export const metadata: Metadata = {
   description: 'Social predictions about your personal life.',
 }
 
+const CATEGORIES = [
+  'All', 'Trending', 'New', 'Relationships', 'Work', 'Health',
+  'Sports', 'Entertainment', 'Food', 'Travel', 'School', 'Finance',
+]
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geist.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-[#0d0d11] text-zinc-100 antialiased">
-        <nav className="sticky top-0 z-50 border-b border-zinc-800/60 bg-[#0d0d11]/80 backdrop-blur-md">
-          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-            <a href="/" className="flex items-center gap-2">
-              <span className="text-base font-bold tracking-tight text-white">PredictMate</span>
+      <body className="min-h-full flex flex-col bg-[#f5f6fa] text-slate-900 antialiased">
+
+        {/* Main nav */}
+        <nav className="sticky top-0 z-50 bg-white border-b border-gray-200">
+          <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
+
+            {/* Logo */}
+            <a href="/" className="flex items-center gap-2 mr-2 flex-shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+                <span className="text-white text-xs font-black">P</span>
+              </div>
+              <span className="font-bold text-gray-900 text-sm">PredictMate</span>
             </a>
-            <div className="flex items-center gap-5">
-              <a href="/" className="text-sm font-medium text-zinc-400 hover:text-white transition">
-                Explore
+
+            {/* Nav links */}
+            <div className="flex items-center gap-1 flex-1">
+              <a href="/explore" className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition">
+                Trending
               </a>
+            </div>
+
+            {/* Right actions */}
+            <div className="flex items-center gap-2">
+              <button className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition">
+                Log In
+              </button>
               <a
                 href="/create"
-                className="rounded-lg bg-violet-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-violet-500 transition"
+                className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 transition"
               >
-                + Create
+                Create market
               </a>
             </div>
           </div>
+
+          {/* Category tabs */}
+          <div className="border-t border-gray-100 bg-white">
+            <div className="mx-auto max-w-7xl px-4">
+              <div className="flex items-center gap-1 overflow-x-auto py-2" style={{ scrollbarWidth: 'none' }}>
+                {CATEGORIES.map((cat) => (
+                  <a
+                    key={cat}
+                    href={`/explore?c=${cat.toLowerCase()}`}
+                    className="whitespace-nowrap flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition"
+                  >
+                    {cat}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
         </nav>
+
         {children}
       </body>
     </html>

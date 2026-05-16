@@ -5,21 +5,20 @@ import { useRouter } from 'next/navigation'
 
 export default function ResolveForm({ marketId }: { marketId: string }) {
   const router = useRouter()
-  const [open, setOpen]           = useState(false)
-  const [outcome, setOutcome]     = useState<'yes' | 'no'>('yes')
-  const [creatorName, setName]    = useState('')
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
+  const [open, setOpen]       = useState(false)
+  const [outcome, setOutcome] = useState<'yes' | 'no'>('yes')
+  const [name, setName]       = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
 
   async function handleResolve(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
-    setLoading(true)
+    setError(''); setLoading(true)
     try {
       const res = await fetch('/api/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ marketId, outcome, creatorName }),
+        body: JSON.stringify({ marketId, outcome, creatorName: name }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Something went wrong')
@@ -32,57 +31,46 @@ export default function ResolveForm({ marketId }: { marketId: string }) {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="w-full rounded-xl border border-zinc-800 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-400 hover:border-zinc-700 transition"
-      >
+      <button onClick={() => setOpen(true)}
+        className="w-full rounded-xl border border-gray-200 py-2 text-xs font-medium text-gray-400 hover:border-gray-300 hover:text-gray-600 transition">
         Creator? Mark the outcome
       </button>
     )
   }
 
   return (
-    <form onSubmit={handleResolve} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
+    <form onSubmit={handleResolve} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-white">Mark outcome</h3>
-        <button type="button" onClick={() => { setOpen(false); setError('') }} className="text-zinc-500 hover:text-zinc-300 text-lg leading-none">×</button>
+        <h3 className="text-sm font-semibold text-gray-900">Mark outcome</h3>
+        <button type="button" onClick={() => { setOpen(false); setError('') }} className="text-gray-400 hover:text-gray-700 text-lg leading-none">×</button>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         {(['yes', 'no'] as const).map((side) => (
-          <button
-            key={side}
-            type="button"
-            onClick={() => setOutcome(side)}
+          <button key={side} type="button" onClick={() => setOutcome(side)}
             className={`rounded-xl border py-2.5 text-sm font-bold transition ${
               outcome === side
-                ? side === 'yes' ? 'border-emerald-500 bg-emerald-950 text-emerald-400' : 'border-red-500 bg-red-950 text-red-400'
-                : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600'
-            }`}
-          >
+                ? side === 'yes' ? 'border-green-400 bg-green-50 text-green-700' : 'border-red-300 bg-red-50 text-red-600'
+                : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'
+            }`}>
             {side.toUpperCase()}
           </button>
         ))}
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs text-zinc-500">Your name (must match creator)</label>
+        <label className="mb-1.5 block text-xs text-gray-500">Your name (must match creator)</label>
         <input
-          value={creatorName}
-          onChange={(e) => setName(e.target.value)}
-          required
-          placeholder="Creator name"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          value={name} onChange={(e) => setName(e.target.value)}
+          required placeholder="Creator name"
+          className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
         />
       </div>
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-red-500">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-violet-600 py-2.5 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
-      >
+      <button type="submit" disabled={loading}
+        className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition">
         {loading ? 'Saving…' : 'Confirm outcome →'}
       </button>
     </form>

@@ -15,11 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: market.question,
     description: market.context || `${yes}% YES · Created by ${market.creatorName}`,
-    openGraph: {
-      title: market.question,
-      description: `${yes}% YES · ${(market.votes ?? []).length} votes`,
-      images: [`/api/og/${id}`],
-    },
+    openGraph: { images: [`/api/og/${id}`] },
     twitter: { card: 'summary_large_image', images: [`/api/og/${id}`] },
   }
 }
@@ -44,7 +40,7 @@ export default async function MarketPage({ params }: Props) {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
-      <a href="/" className="inline-block mb-6 text-sm text-zinc-500 hover:text-zinc-300 transition">
+      <a href="/explore" className="inline-block mb-6 text-sm text-gray-400 hover:text-gray-700 transition">
         ← Explore
       </a>
 
@@ -54,15 +50,15 @@ export default async function MarketPage({ params }: Props) {
         <div className="lg:col-span-2 space-y-5">
 
           {market.imageUrl && (
-            <div className="rounded-2xl overflow-hidden border border-zinc-800">
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={market.imageUrl} alt="" className="w-full max-h-72 object-cover" />
             </div>
           )}
 
-          <div>
-            <h1 className="text-2xl font-bold text-white leading-snug">{market.question}</h1>
-            <p className="mt-2 text-sm text-zinc-500">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h1 className="text-xl font-bold text-gray-900 leading-snug">{market.question}</h1>
+            <p className="mt-2 text-sm text-gray-400">
               by {market.creatorName}
               {' · '}
               {isSettled
@@ -71,43 +67,41 @@ export default async function MarketPage({ params }: Props) {
                   ? `Closed ${expiryDate}`
                   : `Closes ${expiryDate}`}
             </p>
+
+            {isSettled && (
+              <div className={`mt-4 rounded-xl border px-4 py-3 ${
+                market.outcome === 'yes' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+              }`}>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Resolved</p>
+                <p className={`text-3xl font-extrabold ${market.outcome === 'yes' ? 'text-green-600' : 'text-red-600'}`}>
+                  {market.outcome === 'yes' ? 'YES' : 'NO'}
+                </p>
+              </div>
+            )}
           </div>
 
-          {isSettled && (
-            <div className={`rounded-2xl border px-5 py-4 ${
-              market.outcome === 'yes'
-                ? 'border-emerald-800 bg-emerald-950'
-                : 'border-red-800 bg-red-950'
-            }`}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Resolved</p>
-              <p className={`text-4xl font-extrabold ${market.outcome === 'yes' ? 'text-emerald-400' : 'text-red-400'}`}>
-                {market.outcome === 'yes' ? 'YES' : 'NO'}
-              </p>
-            </div>
-          )}
-
           {market.context && (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Context</p>
-              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{market.context}</p>
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Context</p>
+              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{market.context}</p>
             </div>
           )}
 
           {recentVotes.length > 0 && (
             <div>
-              <h2 className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-3">
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">
                 Activity · {totalVotes} vote{totalVotes !== 1 ? 's' : ''}
               </h2>
               <ul className="space-y-2">
                 {recentVotes.map((v, i) => (
-                  <li key={i} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5">
+                  <li key={i} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                      v.side === 'yes' ? 'bg-emerald-950 text-emerald-400' : 'bg-red-950 text-red-400'
+                      v.side === 'yes' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
                     }`}>
                       {v.side.toUpperCase()}
                     </span>
-                    <span className="text-sm text-zinc-300">{v.name}</span>
-                    <span className="ml-auto text-[11px] text-zinc-600">
+                    <span className="text-sm text-gray-700">{v.name}</span>
+                    <span className="ml-auto text-[11px] text-gray-400">
                       {new Date(v.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   </li>
@@ -117,8 +111,8 @@ export default async function MarketPage({ params }: Props) {
           )}
 
           {recentVotes.length === 0 && canVote && (
-            <div className="rounded-2xl border border-dashed border-zinc-800 py-12 text-center">
-              <p className="text-sm text-zinc-600">Be the first to vote on this prediction.</p>
+            <div className="rounded-2xl border border-dashed border-gray-300 py-12 text-center bg-white">
+              <p className="text-sm text-gray-400">Be the first to vote on this prediction.</p>
             </div>
           )}
         </div>
@@ -127,26 +121,26 @@ export default async function MarketPage({ params }: Props) {
         <div className="space-y-4">
 
           {/* Probability card */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-end justify-between mb-5">
               <div>
-                <div className="text-5xl font-extrabold text-emerald-400">{yesPct}%</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mt-1">chance YES</div>
+                <div className="text-5xl font-extrabold text-green-600">{yesPct}%</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">chance YES</div>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold text-red-400">{noPct}%</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mt-1">chance NO</div>
+                <div className="text-3xl font-bold text-red-500">{noPct}%</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">chance NO</div>
               </div>
             </div>
 
-            <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+            <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-green-400 to-green-500 transition-all duration-500"
                 style={{ width: `${yesPct}%` }}
               />
             </div>
 
-            <div className="mt-3 flex justify-between text-[11px] text-zinc-600">
+            <div className="mt-3 flex justify-between text-[11px] text-gray-400">
               <span>{yesCount(market)} YES</span>
               <span>{noCount(market)} NO</span>
             </div>
@@ -155,7 +149,7 @@ export default async function MarketPage({ params }: Props) {
           {canVote ? (
             <VoteForm marketId={market.id} />
           ) : (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 py-4 text-center text-sm text-zinc-600">
+            <div className="rounded-2xl border border-gray-200 bg-white py-4 text-center text-sm text-gray-400 shadow-sm">
               {isSettled ? 'Market resolved' : 'Voting closed'}
             </div>
           )}

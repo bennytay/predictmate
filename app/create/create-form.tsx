@@ -29,16 +29,16 @@ function getDateOptions() {
 
 export default function CreateForm() {
   const router = useRouter()
-  const [question, setQuestion]   = useState('')
-  const [name, setName]           = useState('')
-  const [context, setContext]     = useState('')
-  const [imageUrl, setImageUrl]   = useState('')
-  const [selectedTime, setTime]   = useState('23:59')
-  const [selectedDate, setDate]   = useState('')
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
+  const [question, setQuestion] = useState('')
+  const [name, setName]         = useState('')
+  const [context, setContext]   = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [selectedTime, setTime] = useState('23:59')
+  const [selectedDate, setDate] = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
 
-  const dateOptions = useMemo(() => getDateOptions(), [])
+  const dateOptions   = useMemo(() => getDateOptions(), [])
   const effectiveDate = selectedDate || dateOptions[0].value
 
   useEffect(() => {
@@ -51,7 +51,6 @@ export default function CreateForm() {
     setError('')
     setLoading(true)
     const expiresAt = new Date(`${effectiveDate}T${selectedTime}`).toISOString()
-
     try {
       const res = await fetch('/api/create', {
         method: 'POST',
@@ -68,76 +67,63 @@ export default function CreateForm() {
     }
   }
 
+  const inputCls = 'w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
+  const selectedBtn = 'border-indigo-500 bg-indigo-50 text-indigo-700'
+  const unselectedBtn = 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700'
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-300">Question</label>
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">Question</label>
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          required
-          maxLength={280}
-          rows={3}
-          placeholder="Will Alex get the promotion this quarter?"
-          className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          required maxLength={280} rows={3}
+          placeholder="Will Alex get the promotion before Q3 ends?"
+          className={inputCls + ' resize-none'}
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-300">Your name</label>
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">Your name</label>
         <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          maxLength={50}
-          placeholder="Jordan"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          value={name} onChange={(e) => setName(e.target.value)}
+          required maxLength={50} placeholder="Jordan"
+          className={inputCls}
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-300">
-          Context <span className="text-zinc-600 font-normal">(optional)</span>
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          Context <span className="text-gray-400 font-normal">(optional)</span>
         </label>
         <textarea
-          value={context}
-          onChange={(e) => setContext(e.target.value)}
-          maxLength={1000}
-          rows={3}
-          placeholder="Provide background info so people can make an informed vote…"
-          className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          value={context} onChange={(e) => setContext(e.target.value)}
+          maxLength={1000} rows={3}
+          placeholder="Give people background so they can make an informed vote…"
+          className={inputCls + ' resize-none'}
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-300">
-          Image URL <span className="text-zinc-600 font-normal">(optional)</span>
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          Image URL <span className="text-gray-400 font-normal">(optional)</span>
         </label>
         <input
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          type="url"
-          placeholder="https://..."
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+          type="url" placeholder="https://..."
+          className={inputCls}
         />
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-zinc-300">Closes at — time</label>
+        <label className="mb-2 block text-sm font-medium text-gray-700">Closes at — time</label>
         <div className="grid grid-cols-3 gap-2">
           {TIME_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setTime(opt.value)}
-              className={`flex flex-col items-center rounded-2xl border py-2.5 transition ${
-                selectedTime === opt.value
-                  ? 'border-violet-500 bg-violet-950 text-violet-300'
-                  : 'border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
-              }`}
-            >
-              <span className="text-xs font-semibold">{opt.label}</span>
+            <button key={opt.value} type="button" onClick={() => setTime(opt.value)}
+              className={`flex flex-col items-center rounded-2xl border py-2.5 transition text-sm ${selectedTime === opt.value ? selectedBtn : unselectedBtn}`}>
+              <span className="font-semibold text-xs">{opt.label}</span>
               <span className="text-[10px] opacity-60 mt-0.5">{opt.display}</span>
             </button>
           ))}
@@ -145,20 +131,12 @@ export default function CreateForm() {
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-zinc-300">Closes at — date</label>
+        <label className="mb-2 block text-sm font-medium text-gray-700">Closes at — date</label>
         <div className="grid grid-cols-3 gap-2">
           {dateOptions.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setDate(opt.value)}
-              className={`flex flex-col items-center rounded-2xl border py-2.5 transition ${
-                effectiveDate === opt.value
-                  ? 'border-violet-500 bg-violet-950 text-violet-300'
-                  : 'border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
-              }`}
-            >
-              <span className="text-xs font-semibold">{opt.label}</span>
+            <button key={opt.value} type="button" onClick={() => setDate(opt.value)}
+              className={`flex flex-col items-center rounded-2xl border py-2.5 transition ${effectiveDate === opt.value ? selectedBtn : unselectedBtn}`}>
+              <span className="font-semibold text-xs">{opt.label}</span>
               <span className="text-[10px] opacity-60 mt-0.5">{opt.sub}</span>
             </button>
           ))}
@@ -166,13 +144,12 @@ export default function CreateForm() {
       </div>
 
       {error && (
-        <p className="rounded-xl bg-red-950 border border-red-800 px-4 py-3 text-sm text-red-400">{error}</p>
+        <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</p>
       )}
 
       <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-violet-600 py-3 font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+        type="submit" disabled={loading}
+        className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
         {loading ? 'Publishing…' : 'Publish prediction →'}
       </button>
